@@ -1,56 +1,53 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Astro Cricket</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.compiled.js"></script>
-  </head>
-  <body>
-    <video id="video" width="640" controls autoplay></video>
-    <script>
-      async function initApp() {
-        // Install polyfills
-        shaka.polyfill.installAll();
-
-        if (!shaka.Player.isBrowserSupported()) {
-          console.error("Browser not supported!");
-          return;
-        }
-
-        const video = document.getElementById("video");
-        const player = new shaka.Player(video);
-
-        // Optional: Logging
-        player.configure({ loggingLevel: 'debug' });
-
-        // Configure custom headers
-        player.getNetworkingEngine().registerRequestFilter((type, request) => {
-          if (type === shaka.net.NetworkingEngine.RequestType.MANIFEST ||
-              type === shaka.net.NetworkingEngine.RequestType.SEGMENT) {
-            request.headers["referer"] = "https://webiptv.updatesbyrahul.site/";
-            request.headers["origin"] = "https://webiptv.updatesbyrahul.site";
-            request.headers["user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
-          }
-        });
-
-        // Configure ClearKey DRM
-        player.configure({
-          drm: {
-            clearKeys: {
-              // Format: 'KID': 'Key'
-              'IgNLw8M0QuWw3P1eUYCQBQ': 'psBcxG/e/u6G1UNfFKnA+Q'
-            }
-          }
-        });
-
-        try {
-          await player.load('https://l02.dp.sooka.my/2504/linear/index.mpd');
-          console.log("The video has now been loaded!");
-        } catch (e) {
-          console.error("Error loading video", e);
-        }
+<head>
+  <title>Shaka Player Example</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.compiled.js"></script>
+</head>
+<body>
+  <video id="video" width="640" controls autoplay></video>
+  <script>
+    async function initApp() {
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) {
+        console.error("Browser not supported!");
+        return;
       }
 
-      document.addEventListener("DOMContentLoaded", initApp);
-    </script>
-  </body>
+      shaka.log.setLevel(shaka.log.Level.DEBUG); // Set debug level
+
+      const video = document.getElementById("video");
+      const player = new shaka.Player();
+      await player.attach(video);
+
+      // Headers (won't work in normal browser JS due to CORS restrictions!)
+      player.getNetworkingEngine().registerRequestFilter((type, request) => {
+        if (type === shaka.net.NetworkingEngine.RequestType.MANIFEST ||
+            type === shaka.net.NetworkingEngine.RequestType.SEGMENT) {
+          request.headers["referer"] = "https://webiptv.updatesbyrahul.site/";
+          request.headers["origin"] = "https://webiptv.updatesbyrahul.site";
+          request.headers["user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+        }
+      });
+
+      // DRM keys (ClearKey)
+      player.configure({
+        drm: {
+          clearKeys: {
+            "IgNLw8M0QuWw3P1eUYCQBQ": "psBcxG/e/u6G1UNfFKnA+Q"
+          }
+        }
+      });
+
+      try {
+        await player.load("https://l02.dp.sooka.my/2504/linear/index.mpd");
+        console.log("The video has now been loaded!");
+      } catch (e) {
+        console.error("Error loading video", e);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
 </html>
